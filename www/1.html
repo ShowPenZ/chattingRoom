@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+
+<body>
+    用户：
+    <input type="text" id="user">
+    <br/> 密码：
+    <input type="password" id='pwd'>
+    <br/>
+    <input type="button" value="注册" id='btn1'>
+    <input type="button" value="登录" id='btn2'>
+
+</body>
+<script>
+
+    let sock = io.connect('ws://localhost:3000');
+
+    window.onload = function () {
+        let obtn1 = document.getElementById('btn1')
+        let obtn2 = document.getElementById('btn2')
+        let oUser = document.getElementById('user')
+        let oPwd = document.getElementById('pwd')
+
+        sock.on('reg_ret', (code, msg) => {
+            if (code) {
+                alert('注册失败！' + msg)
+            } else {
+                alert('注册成功！')
+            }
+        })
+
+        sock.on('login_ret', (code, msg) => {
+            if (code) {
+                alert('登录失败！' + msg)
+            } else {
+                alert(msg)
+            }
+        })
+        obtn1.onclick = function () {
+            console.log(3242)
+            sock.emit('reg', oUser.value, oPwd.value)
+        }
+
+        obtn2.onclick = function () {
+            console.log(3242)
+            sock.emit('login', oUser.value, oPwd.value)
+        }
+    }
+
+
+</script>
+
+</html>
