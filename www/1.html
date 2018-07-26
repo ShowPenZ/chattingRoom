@@ -7,6 +7,11 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
 </head>
+<style>
+    .mine {
+        color: aquamarine;
+    }
+</style>
 <script src="http://localhost:3000/socket.io/socket.io.js"></script>
 
 <body>
@@ -17,6 +22,16 @@
     <br/>
     <input type="button" value="注册" id='btn1'>
     <input type="button" value="登录" id='btn2'>
+    <input type="button" value="退出" id='btn3'>
+    <hr/>
+
+
+    <textarea name="text" id="txt" cols="50" rows="10"></textarea>
+    <input type="button" value="发言" id='btn4'>
+
+    <ul id='uul'>
+
+    </ul>
 
 </body>
 <script>
@@ -24,11 +39,17 @@
     let sock = io.connect('ws://localhost:3000');
 
     window.onload = function () {
+        let cur_username = '';
         let obtn1 = document.getElementById('btn1')
         let obtn2 = document.getElementById('btn2')
+        let obtn3 = document.getElementById('btn3')
+        let obtn4 = document.getElementById('btn4')
+        let oUl = document.getElementById('uul')
         let oUser = document.getElementById('user')
         let oPwd = document.getElementById('pwd')
+        let txt = document.getElementById('txt')
 
+        //注册
         sock.on('reg_ret', (code, msg) => {
             if (code) {
                 alert('注册失败！' + msg)
@@ -37,21 +58,56 @@
             }
         })
 
+        //登录
         sock.on('login_ret', (code, msg) => {
             if (code) {
                 alert('登录失败！' + msg)
             } else {
+                cur_username = oUser.value;
                 alert(msg)
             }
         })
+
+        //消息
+        //自己发送消息的结果
+        sock.on('msg_ret', (code, msg) => {
+            if (code) {
+                alert('消息发送失败' + msg)
+            } else {
+                console.log(msg)
+                let newMyMsg = document.createElement('li');
+                newMyMsg.className = 'mine'
+                newMyMsg.innerHTML = `<h4>${cur_username}</h4><p>${txt.value}</p>`
+                oUl.appendChild(newMyMsg)
+                txt.value = ''
+                alert('消息发送成功！')
+            }
+
+        })
+        //接受别人发送的消息
+        sock.on('msg', (username, text) => {
+            let newOtherMsg = document.createElement('li')
+            newOtherMsg.innerHTML = `<h4>${username}</h4><p>${text}</p>`
+            oUl.appendChild(newOtherMsg)
+        })
+
         obtn1.onclick = function () {
-            console.log(3242)
+
             sock.emit('reg', oUser.value, oPwd.value)
         }
 
         obtn2.onclick = function () {
-            console.log(3242)
+
             sock.emit('login', oUser.value, oPwd.value)
+        }
+        obtn3.onclick = function () {
+
+            sock.disconnect();
+        }
+        obtn4.onclick = function () {
+            console.log(324234)
+            sock.emit('msg', txt.value)
+
         }
     }
 

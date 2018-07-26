@@ -7,10 +7,9 @@ var io = require('socket.io');
 let db = mysql.createPool({
 	host: 'localhost',
 	user: 'root',
-	password: 'showpenZ.12580',
+	password: 'zxp.1996',
 	database: 'chattingroom'
 });
-// console.log(db);
 
 //1.创建http服务器
 
@@ -35,9 +34,14 @@ httpServer.listen(3000);
 
 //2.创建websocket服务
 let wsServer = io.listen(httpServer);
+let allSock = [];
+
 //约定登录的接受口令是login，发送口令是login_ret;
 //约定注册的接受口令是reg,发送口令是reg_ret
 wsServer.on('connection', sock => {
+	let cur_userName = '',
+		cur_userID = 0;
+	allSock.push(sock); //每来一个人就添加一人
 	//注册接口，ws版
 	sock.on('reg', (username, pass) => {
 		//1.校检数据
@@ -48,6 +52,7 @@ wsServer.on('connection', sock => {
 		} else {
 			//2.校检通过，查询数据库用户名是否已经注册
 			db.query(`SELECT ID FROM user_table WHERE username='${username}'`, (err, data) => {
+				console.log(data);
 				if (err) {
 					console.log(err);
 					sock.emit('reg_ret', 1, '数据库发生错误');
@@ -82,7 +87,6 @@ wsServer.on('connection', sock => {
 			db.query(
 				`SELECT ID,password FROM user_table WHERE username='${username}'`,
 				(err, data) => {
-					console.log(data);
 					if (err) {
 						console.log(err);
 						sock.emit('login_ret', 1, '数据库发生错误');
@@ -93,12 +97,14 @@ wsServer.on('connection', sock => {
 					} else {
 						db.query(
 							`UPDATE user_table set online=1 WHERE ID='${data[0].ID}'`,
-							(err, data) => {
+							(err, datas) => {
 								if (err) {
 									console.log(err);
 									sock.emit('login_ret', 1, '数据库发生错误');
 								} else {
-									sock.emit('login_ret', 0, '登录成功');
+									cur_userID = data[0].ID;
+									cur_userName = username;
+									sock.emit('login_ret', 0, ['登录成功', username]);
 								}
 							}
 						);
@@ -106,5 +112,41 @@ wsServer.on('connection', sock => {
 				}
 			);
 		}
+	});
+
+	//发送聊天接口
+	sock.on('msg', text => {
+		console.log(text);
+		if (!text) {
+			sock.emit('msg_ret', 1, '聊天文本不能为空！');
+		} else {
+			//广播给所有人
+			allSock.map(item => {
+				if (item === sock) {
+					return;
+				}
+
+				item.emit('msg', cur_userName, text);
+			});
+
+			sock.emit('msg_ret', 0, '发送成功');
+		}
+	});
+
+	//离线接口 适用与刷新，关闭网页 这类
+	sock.on('disconnect', () => {
+		console.log('cur_userID', cur_userID);
+		db.query(`UPDATE user_table SET online=0 WHERE ID=${cur_userID}`, err => {
+			if (err) {
+				console.log(err);
+			}
+			sock.emit('disconnect_ret', 0, '退出成功');
+			cur_userID = 0;
+			cur_userName = '';
+			//离线时清掉allSock里离线的那个sock
+			allSock = allSock.filter(item => {
+				item != sock; // 过滤掉离线的sock
+			});
+		});
 	});
 });
