@@ -74,7 +74,6 @@
             if (code) {
                 alert('消息发送失败' + msg)
             } else {
-                console.log(msg)
                 let newMyMsg = document.createElement('li');
                 newMyMsg.className = 'mine'
                 newMyMsg.innerHTML = `<h4>${cur_username}</h4><p>${txt.value}</p>`
@@ -105,7 +104,6 @@
             sock.disconnect();
         }
         obtn4.onclick = function () {
-            console.log(324234)
             sock.emit('msg', txt.value)
 
         }
