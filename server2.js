@@ -4,12 +4,7 @@ var mysql = require('mysql');
 var io = require('socket.io');
 
 //数据库连接
-let db = mysql.createPool({
-	host: 'localhost',
-	user: 'root',
-	password: 'zxp.1996',
-	database: 'chattingroom'
-});
+
 
 //1.创建http服务器
 
